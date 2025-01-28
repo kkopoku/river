@@ -14,7 +14,7 @@ namespace River.API.Configurations
             _database = client.GetDatabase(mongoDbSettings.Value.DatabaseName);
         }
 
-        public IMongoCollection<Wallet> Orders => _database.GetCollection<Wallet>("Wallets");
+        public IMongoCollection<Wallet> Wallets => _database.GetCollection<Wallet>("Wallets");
         // public IMongoCollection<Product> Products => _database.GetCollection<Product>("Products");
 
         public bool TestConnection()
