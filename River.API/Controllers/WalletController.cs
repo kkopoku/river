@@ -32,10 +32,27 @@ namespace River.API.Controllers
         [HttpPost("create")]
         public async Task<IActionResult> CreateWallet([FromBody] CreateWalletDto createWalletDto){
             string tag = "[WalletController][CreateWallet]";
-            _logger.LogInformation($"{tag} Wallet is being created via log");
+            _logger.LogInformation($"{tag} Wallet is being created ...");
             try{
                 var createdWallet = await _walletServices.AddWalletAsync(createWalletDto);
-                return StatusCode(201);
+                return StatusCode(201, createdWallet);
+            }catch(Exception e){
+                Console.WriteLine(tag+e.Message);
+                return StatusCode(500);
+            }
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> CreateWallet(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10
+        ){
+            string tag = "[WalletController][CreateWallet]";
+            _logger.LogInformation($"{tag} Wallets are being fetched ...");
+            try{
+                var wallets = await _walletServices.GetAllWalletsAsync(pageNumber, pageSize);
+                return StatusCode(201, wallets);
             }catch(Exception e){
                 Console.WriteLine(tag+e.Message);
                 return StatusCode(500);

@@ -8,7 +8,8 @@ namespace River.API.Services;
 
 
 public class WalletService(
-    IWalletRepository walletRepository
+    IWalletRepository walletRepository,
+    ILogger<WalletService> logger
 ):IWalletServices
 {
 
@@ -30,7 +31,15 @@ public class WalletService(
             message: "Wallet created successfully",
             data: createdWallet
         );
-        // return createdWallet;
+    }
+
+    public async Task<ApiResponse<List<Wallet>>> GetAllWalletsAsync(int pageNumber, int pageSize){
+        var wallets = await _walletRepository.GetAllWalletsAsync(pageNumber, pageSize);
+        return new ApiResponse<List<Wallet>>(
+            code: $"{200}",
+            message: "Wallets fetched successfully",
+            data: wallets
+        );
     }
 
 }
