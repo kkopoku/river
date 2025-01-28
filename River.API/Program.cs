@@ -1,5 +1,7 @@
 using DotNetEnv;
 using River.API.Configurations;
+using River.API.Services;
+using River.API.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 Env.Load();
@@ -20,6 +22,17 @@ builder.Configuration["MongoDB:ConnectionString"] =
     mongoConnectionString ?? throw new Exception("MONGO_CONNECTION_STRING not set.");
 builder.Configuration["MongoDB:DatabaseName"] =
     mongoDatabaseName ?? throw new Exception("MONGO_DATABASE_NAME not set.");
+
+
+builder.Services.AddHttpContextAccessor();
+
+// Add services
+builder.Services.AddScoped<IWalletServices, WalletService>();
+
+
+// Add repositories
+builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+
 
 // Configure logging
 builder.Logging.ClearProviders();
