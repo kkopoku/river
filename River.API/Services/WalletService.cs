@@ -10,12 +10,13 @@ namespace River.API.Services;
 public class WalletService(
     IWalletRepository walletRepository,
     ILogger<WalletService> logger
-):IWalletServices
+) : IWalletServices
 {
 
     private readonly IWalletRepository _walletRepository = walletRepository;
 
-    public async Task<ApiResponse<Wallet>> AddWalletAsync(CreateWalletDto createWalletDto){
+    public async Task<ApiResponse<Wallet>> AddWalletAsync(CreateWalletDto createWalletDto)
+    {
         var wallet = new Wallet
         {
             AccountNumber = createWalletDto.AccountNumber,
@@ -25,15 +26,17 @@ public class WalletService(
             PhoneNumber = createWalletDto.PhoneNumber
         };
 
+
         var createdWallet = await _walletRepository.CreateWalletAsync(wallet);
         return new ApiResponse<Wallet>(
-            code: $"{201}",
-            message: "Wallet created successfully",
-            data: createdWallet
-        );
+        code: $"{201}",
+        message: "Wallet created successfully",
+        data: createdWallet);
+
     }
 
-    public async Task<ApiResponse<List<Wallet>>> GetAllWalletsAsync(int pageNumber, int pageSize){
+    public async Task<ApiResponse<List<Wallet>>> GetAllWalletsAsync(int pageNumber, int pageSize)
+    {
         var wallets = await _walletRepository.GetAllWalletsAsync(pageNumber, pageSize);
         return new ApiResponse<List<Wallet>>(
             code: $"{200}",

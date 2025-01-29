@@ -1,6 +1,5 @@
 using MongoDB.Driver;
 using River.API.Configurations;
-using River.API.Controllers;
 using River.API.Models;
 
 namespace River.API.Repositories;
@@ -23,6 +22,10 @@ public class WalletRepository(
             await _wallets.InsertOneAsync(wallet);
             return wallet;
         }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+        {
+            throw new Exception("AccountNumber must be unique.");
+        }
         catch (Exception e)
         {
             _logger.LogError($"{tag} Error occurred creating wallet");
@@ -33,7 +36,7 @@ public class WalletRepository(
 
     public async Task<List<Wallet>> GetAllWalletsAsync(int pageNumber, int pageSize)
     {
-        string tag =  "[WalletRepository][GetAllWalletsAsync]";
+        string tag = "[WalletRepository][GetAllWalletsAsync]";
         try
         {
             var wallets = await _wallets
