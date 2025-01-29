@@ -7,5 +7,6 @@ namespace River.API.Services
     {
         Task<ApiResponse<Wallet>> AddWalletAsync(CreateWalletDto createWalletDto);
         Task<ApiResponse<List<Wallet>>> GetAllWalletsAsync(int pageNumber, int pageSize);
+        Task<ApiResponse<Wallet>> UpdateWalletAsync(UpdateWalletDto wallet);
     }
 }

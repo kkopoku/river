@@ -35,6 +35,18 @@ public class WalletService(
 
     }
 
+
+    public async Task<ApiResponse<Wallet>> UpdateWalletAsync(UpdateWalletDto updateWalletDto)
+    {
+        var updatedWallet = await _walletRepository.UpdateWalletAsync(updateWalletDto);
+        return new ApiResponse<Wallet>(
+            code: $"{200}",
+            message: "Wallet updated successfully",
+            data: updatedWallet
+        );
+    }
+
+
     public async Task<ApiResponse<List<Wallet>>> GetAllWalletsAsync(int pageNumber, int pageSize)
     {
         var wallets = await _walletRepository.GetAllWalletsAsync(pageNumber, pageSize);
