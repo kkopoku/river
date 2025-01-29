@@ -19,43 +19,45 @@ namespace River.API.Controllers
         [HttpGet("test")]
         public IActionResult TestRoute([FromBody] object body)
         {
-            Console.WriteLine(body);
-
-            var response = new {
-                message = "Hello World",
-                status = "OK"
-            };
-
+            _logger.LogInformation(body.ToString());
+            var response = new ApiResponse<string>(
+                code: "200",
+                message: "Test route successful",
+                data: "Hello from River.API"
+            );
             return Ok(response);
         }
+
 
         [HttpPost("create")]
         public async Task<IActionResult> CreateWallet([FromBody] CreateWalletDto createWalletDto){
             string tag = "[WalletController][CreateWallet]";
             _logger.LogInformation($"{tag} Wallet is being created ...");
             try{
-                var createdWallet = await _walletServices.AddWalletAsync(createWalletDto);
-                return StatusCode(201, createdWallet);
+                var response = await _walletServices.AddWalletAsync(createWalletDto);
+                return StatusCode(201, response);
             }catch(Exception e){
                 Console.WriteLine(tag+e.Message);
-                return StatusCode(500);
+                var response = new ApiResponse<string>("500", e.Message);
+                return StatusCode(500, response);
             }
         }
 
 
         [HttpGet]
-        public async Task<IActionResult> CreateWallet(
+        public async Task<IActionResult> GetAllWallets(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 10
         ){
-            string tag = "[WalletController][CreateWallet]";
+            string tag = "[WalletController][GetAllWallets]";
             _logger.LogInformation($"{tag} Wallets are being fetched ...");
             try{
-                var wallets = await _walletServices.GetAllWalletsAsync(pageNumber, pageSize);
-                return StatusCode(201, wallets);
+                var response = await _walletServices.GetAllWalletsAsync(pageNumber, pageSize);
+                return StatusCode(201, response);
             }catch(Exception e){
-                Console.WriteLine(tag+e.Message);
-                return StatusCode(500);
+                _logger.LogInformation(tag+e.Message);
+                var response = new ApiResponse<string>("500", e.Message);
+                return StatusCode(500, response);
             }
         }
 
