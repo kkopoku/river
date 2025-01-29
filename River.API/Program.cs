@@ -28,10 +28,12 @@ builder.Services.AddHttpContextAccessor();
 
 // Add services
 builder.Services.AddScoped<IWalletServices, WalletService>();
+builder.Services.AddScoped<ITransferService, TransferService>();
 
 
 // Add repositories
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
+builder.Services.AddScoped<ITransferRepository, TransferRepository>();
 
 
 // Configure logging
