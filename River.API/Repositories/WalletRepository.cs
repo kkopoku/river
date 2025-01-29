@@ -1,5 +1,6 @@
 using MongoDB.Driver;
 using River.API.Configurations;
+using River.API.DTOs;
 using River.API.Models;
 
 namespace River.API.Repositories;
@@ -54,4 +55,41 @@ public class WalletRepository(
     }
 
 
+    public async Task<Wallet> FindOneWalletByEmailAsync(string email)
+    {
+        return await _wallets.Find(Builders<Wallet>.Filter.Eq(w => w.Email, email)).FirstOrDefaultAsync();
+    }
+
+
+    public async Task<Wallet> FindOneWalletByIdAsync(string id)
+    {
+        return await _wallets.Find(Builders<Wallet>.Filter.Eq(w => w.Id, id)).FirstOrDefaultAsync();
+    }
+
+    public async Task<Wallet> FindOneWalletAsync(string key, string value)
+    {
+        var filter = Builders<Wallet>.Filter.Eq(key, value);
+        return await _wallets.Find(filter).FirstOrDefaultAsync();
+    }
+
+    public async Task<Wallet> UpdateWalletAsync(UpdateWalletDto updateWalletDto)
+    {
+        var filter = Builders<Wallet>.Filter.Eq(w => w.AccountNumber, updateWalletDto.AccountNumber);
+
+        // Create the update definition
+        var update = Builders<Wallet>.Update
+            .Set(w => w.FirstName, updateWalletDto.FirstName)
+            .Set(w => w.LastName, updateWalletDto.LastName)
+            .Set(w => w.Email, updateWalletDto.Email)
+            .Set(w => w.PhoneNumber, updateWalletDto.PhoneNumber);
+
+        // Perform the update operation
+        var updatedWallet = await _wallets.FindOneAndUpdateAsync(filter, update, new FindOneAndUpdateOptions<Wallet>
+        {
+            ReturnDocument = ReturnDocument.After // Returns the updated document
+        });
+
+
+        return updatedWallet;
+    }
 }
