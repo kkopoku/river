@@ -12,10 +12,25 @@ namespace River.API.Configurations
         {
             var client = new MongoClient(mongoDbSettings.Value.ConnectionString);
             _database = client.GetDatabase(mongoDbSettings.Value.DatabaseName);
+            ConfigureIndexes();
         }
 
         public IMongoCollection<Wallet> Wallets => _database.GetCollection<Wallet>("Wallets");
-        // public IMongoCollection<Product> Products => _database.GetCollection<Product>("Products");
+        public IMongoCollection<Transfer> Transfers => _database.GetCollection<Transfer>("Transfers");
+        public IMongoCollection<Corridor> Corridors => _database.GetCollection<Corridor>("Corridors");
+        public IMongoCollection<Organisation> Organisations => _database.GetCollection<Organisation>("Organisations");
+        public IMongoCollection<User> Users => _database.GetCollection<User>("Users");
+
+
+        private void ConfigureIndexes()
+        {
+            // Create unique index on AccountNumber for Wallets collection
+            var walletsIndexKeys = Builders<Wallet>.IndexKeys.Ascending(w => w.AccountNumber);
+            var uniqueIndexOptions = new CreateIndexOptions { Unique = true };
+            var indexModel = new CreateIndexModel<Wallet>(walletsIndexKeys, uniqueIndexOptions);
+            Wallets.Indexes.CreateOne(indexModel);
+        }
+
 
         public bool TestConnection()
         {
