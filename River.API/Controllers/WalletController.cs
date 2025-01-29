@@ -37,7 +37,7 @@ namespace River.API.Controllers
                 var response = await _walletServices.AddWalletAsync(createWalletDto);
                 return StatusCode(201, response);
             }catch(Exception e){
-                Console.WriteLine(tag+e.Message);
+                _logger.LogInformation(tag+e.Message);
                 var response = new ApiResponse<string>("500", e.Message);
                 return StatusCode(500, response);
             }
