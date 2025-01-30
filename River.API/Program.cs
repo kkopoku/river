@@ -13,9 +13,16 @@ builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.Configure<MongoDbSettings>(builder.Configuration.GetSection("MongoDB"));
 builder.Services.AddSingleton<MongoDbContext>();
+builder.Services.Configure<KafkaSettings>(builder.Configuration.GetSection("Kafka"));
+builder.Services.AddSingleton<IKafkaProducer, KafkaProducer>();
 
 var mongoConnectionString = Environment.GetEnvironmentVariable("MONGO_CONNECTION_STRING");
 var mongoDatabaseName = Environment.GetEnvironmentVariable("MONGO_DATABASE_NAME");
+
+var kafkaBootstrapServers = Environment.GetEnvironmentVariable("KAFKA_BOOTSTRAPSERVERS");
+var kafkaTopic = Environment.GetEnvironmentVariable("KAFKA_TOPIC");
+var kafkaSaslUsername = Environment.GetEnvironmentVariable("KAFKA_SASL_USERNAME");
+var kafkaSaslPassword = Environment.GetEnvironmentVariable("KAFKA_SASL_PASSWORD");
 
 
 builder.Configuration["MongoDB:ConnectionString"] =
@@ -23,13 +30,20 @@ builder.Configuration["MongoDB:ConnectionString"] =
 builder.Configuration["MongoDB:DatabaseName"] =
     mongoDatabaseName ?? throw new Exception("MONGO_DATABASE_NAME not set.");
 
+builder.Configuration["Kafka:BootstrapServers"] =
+kafkaBootstrapServers ?? throw new Exception("KAFKA_BOOTSTRAPSERVERS not set.");
+builder.Configuration["Kafka:Topic"] = kafkaTopic ?? throw new Exception("KAFKA_TOPIC not set.");
+builder.Configuration["Kafka:SaslUsername"] =
+    kafkaSaslUsername ?? throw new Exception("KAFKA_SASL_USERNAME not set.");
+builder.Configuration["Kafka:SaslPassword"] =
+    kafkaSaslPassword ?? throw new Exception("KAFKA_SASL_PASSWORD not set.");
+
 
 builder.Services.AddHttpContextAccessor();
 
 // Add services
 builder.Services.AddScoped<IWalletServices, WalletService>();
 builder.Services.AddScoped<ITransferService, TransferService>();
-
 
 // Add repositories
 builder.Services.AddScoped<IWalletRepository, WalletRepository>();
