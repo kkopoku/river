@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "River.API", "River.API\Rive
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "River.Tests", "River.Tests\River.Tests.csproj", "{2DF577CD-576D-4E0B-AE50-EDAE69CF5428}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "River.TransactionProcessingService", "River.TransactionProcessingService\River.TransactionProcessingService.csproj", "{D186D511-5973-420B-9CFB-66DD144A2D38}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{2DF577CD-576D-4E0B-AE50-EDAE69CF5428}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2DF577CD-576D-4E0B-AE50-EDAE69CF5428}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2DF577CD-576D-4E0B-AE50-EDAE69CF5428}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D186D511-5973-420B-9CFB-66DD144A2D38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D186D511-5973-420B-9CFB-66DD144A2D38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D186D511-5973-420B-9CFB-66DD144A2D38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D186D511-5973-420B-9CFB-66DD144A2D38}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
