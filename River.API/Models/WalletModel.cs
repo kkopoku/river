@@ -18,6 +18,7 @@ public class Wallet
     public required string FirstName { get; set; }
 
     public required string LastName { get; set; }
+    public required decimal Cap { get; set; }
 
     public string? Email { get; set; }
 
