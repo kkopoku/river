@@ -1,4 +1,5 @@
 using River.API.DTOs;
+using River.API.DTOs.Transfer;
 using River.API.Models;
 using River.API.Repositories;
 
@@ -27,35 +28,7 @@ namespace River.API.Services
                     Amount = createTransferDto.Amount,
                 };
 
-                _logger.LogInformation($"{tag} From Account Number: {createTransferDto.FromAccountNumber}");
-                _logger.LogInformation($"{tag} To Account Number: {createTransferDto.ToAccountNumber}");
-
-                var from = await _walletRepository.FindOneWalletAsync("AccountNumber", createTransferDto.FromAccountNumber);
-                var to = await _walletRepository.FindOneWalletAsync("AccountNumber", createTransferDto.ToAccountNumber);
-
-                if (from == null || to == null)
-                {
-                    return new ApiResponse<Transfer>(
-                        code: "400",
-                        message: "One or both accounts do not exist",
-                        data: null
-                    );
-                }
-
-                UpdateWalletDto fromUpdateWalletDto= new UpdateWalletDto
-                {
-                    AccountNumber = from.AccountNumber,
-                    Balance = from.Balance - transfer.Amount
-                };
-
-                UpdateWalletDto toUpdateWalletDto= new UpdateWalletDto
-                {
-                    AccountNumber = to.AccountNumber,
-                    Balance = to.Balance + transfer.Amount
-                };
-
-                await _walletService.UpdateWalletAsync(fromUpdateWalletDto);
-                await _walletService.UpdateWalletAsync(toUpdateWalletDto);
+                var debitResponse = await Debit(transfer);
 
                 var createdTransfer = await _transferRepository.CreateTransferAsync(transfer);
 
@@ -66,10 +39,10 @@ namespace River.API.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error creating transfer: {ex.Message}", ex);
+                _logger.LogError($"{tag} Error creating transfer: {ex.Message}", ex);
                 return new ApiResponse<Transfer>(
                     code: "500",
-                    message: "An error occurred while creating the transfer",
+                    message: ex.Message ?? "An error occurred while creating the transfer",
                     data: null);
             }
         }
@@ -93,6 +66,50 @@ namespace River.API.Services
                     message: "An error occurred while fetching transfers",
                     data: null);
             }
+        }
+
+
+        private async Task<bool> Debit(Transfer transfer)
+        {
+            string tag = "[TransferService][Debit]";
+            _logger.LogInformation($"{tag} From Account Number: {transfer.From}");
+            _logger.LogInformation($"{tag} To Account Number: {transfer.To}");
+
+            var from = await _walletRepository.FindOneWalletAsync("AccountNumber", transfer.From);
+            var to = await _walletRepository.FindOneWalletAsync("AccountNumber", transfer.To);
+
+            if (from == null || to == null)
+            {
+                throw new Exception("One or both accounts do not exist");
+            }
+
+            if (from.Id == to.Id)
+            {
+                throw new Exception("Cannot transfer to the same account");
+            }
+
+            var cap = from.Cap;
+            var fromBalanceAfter = from.Balance - transfer.Amount;
+            var toBalanceAfter = to.Balance + transfer.Amount;
+
+            if (fromBalanceAfter < cap) throw new Exception("Insufficient funds to transfer");
+
+            UpdateWalletDto fromUpdateWalletDto = new()
+            {
+                AccountNumber = from.AccountNumber,
+                Balance = from.Balance - transfer.Amount
+            };
+
+            UpdateWalletDto toUpdateWalletDto = new()
+            {
+                AccountNumber = to.AccountNumber,
+                Balance = to.Balance + transfer.Amount
+            };
+
+            var fromAfter = await _walletService.UpdateWalletAsync(fromUpdateWalletDto);
+            var toAfter = await _walletService.UpdateWalletAsync(toUpdateWalletDto);
+
+            return true;
         }
     }
 }
