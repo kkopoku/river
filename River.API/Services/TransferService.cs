@@ -16,7 +16,7 @@ namespace River.API.Services
         private readonly IWalletRepository _walletRepository = walletRepository;
         private readonly IWalletServices _walletService = walletServices;
 
-        public async Task<ApiResponse<Transfer>> CreateTransferAsync(CreateTransferDto createTransferDto)
+        public async Task<ApiResponse<TransferDataDto>> CreateTransferAsync(CreateTransferDto createTransferDto)
         {
             string tag = "[TransferService][CreateTransferAsync]";
             try
@@ -28,19 +28,26 @@ namespace River.API.Services
                     Amount = createTransferDto.Amount,
                 };
 
-                var debitResponse = await Debit(transfer);
+                DebitResultDto debitResponse = await Debit(transfer);
 
                 var createdTransfer = await _transferRepository.CreateTransferAsync(transfer);
 
-                return new ApiResponse<Transfer>(
+                var data = new TransferDataDto {
+                    Transfer = createdTransfer,
+                    From = debitResponse.FromWallet,
+                    To = debitResponse.ToWallet
+                };
+
+                return new ApiResponse<TransferDataDto>(
                     code: "201",
                     message: "Transfer created successfully",
-                    data: createdTransfer);
+                    data: data
+                );
             }
             catch (Exception ex)
             {
                 _logger.LogError($"{tag} Error creating transfer: {ex.Message}", ex);
-                return new ApiResponse<Transfer>(
+                return new ApiResponse<TransferDataDto>(
                     code: "500",
                     message: ex.Message ?? "An error occurred while creating the transfer",
                     data: null);
@@ -69,7 +76,7 @@ namespace River.API.Services
         }
 
 
-        private async Task<bool> Debit(Transfer transfer)
+        private async Task<DebitResultDto> Debit(Transfer transfer)
         {
             string tag = "[TransferService][Debit]";
             _logger.LogInformation($"{tag} From Account Number: {transfer.From}");
@@ -106,10 +113,15 @@ namespace River.API.Services
                 Balance = to.Balance + transfer.Amount
             };
 
-            var fromAfter = await _walletService.UpdateWalletAsync(fromUpdateWalletDto);
-            var toAfter = await _walletService.UpdateWalletAsync(toUpdateWalletDto);
+            var fromAfter = await _walletRepository.UpdateWalletAsync(fromUpdateWalletDto);
+            var toAfter = await _walletRepository.UpdateWalletAsync(toUpdateWalletDto);
 
-            return true;
+            DebitResultDto debitResult = new() {
+                FromWallet = fromAfter,
+                ToWallet = toAfter
+            };
+
+            return debitResult;
         }
     }
 }
