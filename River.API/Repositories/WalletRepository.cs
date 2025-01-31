@@ -74,21 +74,52 @@ public class WalletRepository(
 
     public async Task<Wallet> UpdateWalletAsync(UpdateWalletDto updateWalletDto)
     {
+        // Create the filter based on AccountNumber
         var filter = Builders<Wallet>.Filter.Eq(w => w.AccountNumber, updateWalletDto.AccountNumber);
 
-        // Create the update definition
-        var update = Builders<Wallet>.Update
-            .Set(w => w.FirstName, updateWalletDto.FirstName)
-            .Set(w => w.LastName, updateWalletDto.LastName)
-            .Set(w => w.Email, updateWalletDto.Email)
-            .Set(w => w.PhoneNumber, updateWalletDto.PhoneNumber);
+        // Create a list of update definitions
+        var updateDefinitions = new List<UpdateDefinition<Wallet>>();
+
+        // Conditionally add updates for fields that are non-null and non-empty
+        if (!string.IsNullOrEmpty(updateWalletDto.FirstName))
+        {
+            updateDefinitions.Add(Builders<Wallet>.Update.Set(w => w.FirstName, updateWalletDto.FirstName));
+        }
+
+        if (!string.IsNullOrEmpty(updateWalletDto.LastName))
+        {
+            updateDefinitions.Add(Builders<Wallet>.Update.Set(w => w.LastName, updateWalletDto.LastName));
+        }
+
+        if (!string.IsNullOrEmpty(updateWalletDto.Email))
+        {
+            updateDefinitions.Add(Builders<Wallet>.Update.Set(w => w.Email, updateWalletDto.Email));
+        }
+
+        if (updateWalletDto.Balance.HasValue)
+        {
+            updateDefinitions.Add(Builders<Wallet>.Update.Set(w => w.Balance, updateWalletDto.Balance));
+        }
+
+        if (!string.IsNullOrEmpty(updateWalletDto.PhoneNumber))
+        {
+            updateDefinitions.Add(Builders<Wallet>.Update.Set(w => w.PhoneNumber, updateWalletDto.PhoneNumber));
+        }
+
+        // If no fields to update, return early with the existing wallet
+        if (!updateDefinitions.Any())
+        {
+            return null; // No valid fields provided for update
+        }
+
+        // Combine the list of update definitions into a single update
+        var update = Builders<Wallet>.Update.Combine(updateDefinitions);
 
         // Perform the update operation
         var updatedWallet = await _wallets.FindOneAndUpdateAsync(filter, update, new FindOneAndUpdateOptions<Wallet>
         {
-            ReturnDocument = ReturnDocument.After // Returns the updated document
+            ReturnDocument = ReturnDocument.After
         });
-
 
         return updatedWallet;
     }
