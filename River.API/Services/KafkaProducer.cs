@@ -25,7 +25,7 @@ public class KafkaProducer : IKafkaProducer {
             BootstrapServers = settings.BootstrapServers,
             SaslUsername = settings.SaslUsername,
             SaslPassword = settings.SaslPassword,
-            SecurityProtocol = SecurityProtocol.SaslPlaintext,
+            SecurityProtocol = SecurityProtocol.SaslSsl,
             SaslMechanism = SaslMechanism.Plain,
             Acks = Acks.All
         };
