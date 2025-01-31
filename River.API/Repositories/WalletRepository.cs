@@ -72,7 +72,7 @@ public class WalletRepository(
         return await _wallets.Find(filter).FirstOrDefaultAsync();
     }
 
-    public async Task<Wallet> UpdateWalletAsync(UpdateWalletDto updateWalletDto)
+    public async Task<Wallet?> UpdateWalletAsync(UpdateWalletDto updateWalletDto)
     {
         // Create the filter based on AccountNumber
         var filter = Builders<Wallet>.Filter.Eq(w => w.AccountNumber, updateWalletDto.AccountNumber);
@@ -107,9 +107,9 @@ public class WalletRepository(
         }
 
         // If no fields to update, return early with the existing wallet
-        if (!updateDefinitions.Any())
+        if (updateDefinitions.Count == 0)
         {
-            return null; // No valid fields provided for update
+            return null;
         }
 
         // Combine the list of update definitions into a single update

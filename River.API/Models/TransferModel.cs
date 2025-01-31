@@ -19,6 +19,8 @@ public class Transfer
     // [BsonRepresentation(BsonType.ObjectId)]
     // public required string CorridorId { get; set; }
 
+    public bool IsReversed { get; set; } = false;
+
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
     public DateTime CreatedAt { get; set; }
 

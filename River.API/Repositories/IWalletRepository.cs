@@ -12,7 +12,7 @@ namespace River.API.Repositories
         Task<Wallet> FindOneWalletByEmailAsync(string email);
         Task<Wallet> FindOneWalletByIdAsync(string id);
         Task<Wallet> FindOneWalletAsync(string key, string value);
-        Task<Wallet> UpdateWalletAsync(UpdateWalletDto wallet);
+        Task<Wallet?> UpdateWalletAsync(UpdateWalletDto wallet);
         // Task<Wallet> DeleteWalletAsync(string id);
     }
 }

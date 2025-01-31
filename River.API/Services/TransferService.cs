@@ -32,7 +32,8 @@ namespace River.API.Services
 
                 var createdTransfer = await _transferRepository.CreateTransferAsync(transfer);
 
-                var data = new TransferDataDto {
+                var data = new TransferDataDto
+                {
                     Transfer = createdTransfer,
                     From = debitResponse.FromWallet,
                     To = debitResponse.ToWallet
@@ -76,6 +77,52 @@ namespace River.API.Services
         }
 
 
+        public async Task<ApiResponse<ReverseTransferResultDto>> ReverseTransferAsync(ReverseTransferDto reverseTransferDto)
+        {
+            string tag = "[TransferService.cs][ReverseTransferAsync]";
+            try
+            {
+                var foundTransaction = await _transferRepository.FindTransferByIdAsync(reverseTransferDto.TransactionId);
+
+                if (foundTransaction == null)
+                {
+                    return new ApiResponse<ReverseTransferResultDto>(
+                        code: "404",
+                        message: "Transfer not found",
+                        data: null
+                    );
+                }
+
+                if (foundTransaction.IsReversed)
+                {
+                    return new ApiResponse<ReverseTransferResultDto>(
+                        code: "400",
+                        message: "Transfer has already been reversed",
+                        data: null
+                    );
+                }
+
+                var result = await Reverse(foundTransaction);
+                
+                return new ApiResponse<ReverseTransferResultDto> (
+                    code: "200",
+                    message: "Transfer reversed successfully",
+                    data: result
+                );
+                
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"{tag} Error creating transfer: {ex.Message}", ex);
+                return new ApiResponse<ReverseTransferResultDto>(
+                    code: "500",
+                    message: ex.Message ?? "An error occurred while creating the transfer",
+                    data: null);
+            }
+        }
+
+
+
         private async Task<DebitResultDto> Debit(Transfer transfer)
         {
             string tag = "[TransferService][Debit]";
@@ -116,12 +163,61 @@ namespace River.API.Services
             var fromAfter = await _walletRepository.UpdateWalletAsync(fromUpdateWalletDto);
             var toAfter = await _walletRepository.UpdateWalletAsync(toUpdateWalletDto);
 
-            DebitResultDto debitResult = new() {
+            DebitResultDto debitResult = new()
+            {
                 FromWallet = fromAfter,
                 ToWallet = toAfter
             };
 
             return debitResult;
+        }
+
+        private async Task<ReverseTransferResultDto?> Reverse(Transfer transfer)
+        {
+
+            string tag = "[TransferService.cs][Reverse]";
+            _logger.LogInformation($"{tag} From Account Number: {transfer.From}");
+
+            var from = await _walletRepository.FindOneWalletAsync("AccountNumber", transfer.From);
+            var to = await _walletRepository.FindOneWalletAsync("AccountNumber", transfer.To);
+
+            if (from == null || to == null)
+            {
+                throw new Exception("One or both accounts do not exist");
+            }
+
+            var fromBalanceAfter = from.Balance + transfer.Amount;
+            var toBalanceAfter = to.Balance - transfer.Amount;
+
+            UpdateWalletDto fromUpdateWalletDto = new()
+            {
+                AccountNumber = from.AccountNumber,
+                Balance = fromBalanceAfter
+            };
+
+            UpdateWalletDto toUpdateWalletDto = new()
+            {
+                AccountNumber = to.AccountNumber,
+                Balance = toBalanceAfter
+            };
+
+            UpdateTransferDto reversedTransfer = new() {
+                TransactionId = transfer.Id,
+                IsReversed = true
+            };
+
+            var fromAfter = await _walletRepository.UpdateWalletAsync(fromUpdateWalletDto);
+            var toAfter = await _walletRepository.UpdateWalletAsync(toUpdateWalletDto);
+            var transferAfter = await _transferRepository.UpdateTransferAsync(reversedTransfer);
+            
+
+            ReverseTransferResultDto result = new() {
+                From = fromAfter,
+                To = toAfter,
+                Transfer = transferAfter
+            };
+
+            return result;
         }
     }
 }
