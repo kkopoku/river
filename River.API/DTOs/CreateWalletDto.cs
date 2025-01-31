@@ -21,6 +21,9 @@ namespace River.API.DTOs
         public string? Email { get; set; }
 
 
+        public decimal? Cap { get; set; }
+
+
         public string? PhoneNumber { get; set; }
 
     }
