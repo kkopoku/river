@@ -26,6 +26,7 @@ namespace River.API.Services
                     From = createTransferDto.FromAccountNumber,
                     To = createTransferDto.ToAccountNumber,
                     Amount = createTransferDto.Amount,
+                    Status = TransferStatus.Success
                 };
 
                 DebitResultDto debitResponse = await Debit(transfer);

@@ -28,6 +28,6 @@ public class Transfer
 
 public enum TransferStatus {
     Pending,
-    Completed,
+    Success,
     Failed
 }
