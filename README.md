@@ -68,7 +68,7 @@ Ensure you have the following installed:
    ```sh
    dotnet run
    ```
-4. The API should now be running at `http://localhost:5000` (or your configured port).
+4. The API should now be running at `http://localhost:5141` (or your configured port).
 
 ### Running the Worker Service
 
