@@ -13,12 +13,6 @@ public class Transfer
 
     public required string To { get; set; }
 
-    // [BsonRepresentation(BsonType.ObjectId)]
-    // public required string OrganisationId { get; set; }
-
-    // [BsonRepresentation(BsonType.ObjectId)]
-    // public required string CorridorId { get; set; }
-
     public bool IsReversed { get; set; } = false;
 
     [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
@@ -28,4 +22,12 @@ public class Transfer
     public DateTime UpdatedAt { get; set; }
 
     public decimal Amount { get; set; }
+    public TransferStatus Status { get; set; } = TransferStatus.Pending;
+}
+
+
+public enum TransferStatus {
+    Pending,
+    Completed,
+    Failed
 }

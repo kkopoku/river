@@ -85,6 +85,11 @@ public class TransferRepository(
                 updateDefinitions.Add(Builders<Transfer>.Update.Set(w => w.IsReversed, updateTransfer.IsReversed));
             }
 
+            if (updateTransfer.Status != null)
+            {
+                updateDefinitions.Add(Builders<Transfer>.Update.Set(w => w.Status, updateTransfer.Status));
+            }
+
             // If no fields to update, return early with the existing wallet
             if (updateDefinitions.Count == 0)
             {
