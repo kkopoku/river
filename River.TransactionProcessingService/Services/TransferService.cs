@@ -1,127 +1,73 @@
-using River.API.DTOs;
-using River.API.DTOs.Transfer;
-using River.API.Models;
-using River.API.Repositories;
+
+using River.TransactionProcessingService.Models;
+using River.TransactionProcessingService.Repositories;
+using River.TransactionProcessingService.DTOs.Transfer;
+using River.TransactionProcessingService.DTOs.Wallet;
 using Newtonsoft.Json;
 
-namespace River.API.Services
+namespace River.TransactionProcessingService.Services
 {
     public class TransferService(
         ITransferRepository transferRepository,
         IWalletRepository walletRepository,
-        IWalletServices walletServices,
-        ILogger<TransferService> logger,
-        IKafkaProducer kafkaProducer
+        ILogger<TransferService> logger
         ) : ITransferService
     {
         private readonly ITransferRepository _transferRepository = transferRepository;
         private readonly ILogger<TransferService> _logger = logger;
         private readonly IWalletRepository _walletRepository = walletRepository;
-        private readonly IWalletServices _walletService = walletServices;
-        private readonly IKafkaProducer _kafkaProducer = kafkaProducer;
 
-        public async Task<ApiResponse<Transfer>> CreateTransferAsync(CreateTransferDto createTransferDto)
+        public async Task ProcessTransfer(Transfer transfer)
+
         {
-            string tag = "[TransferService][CreateTransferAsync]";
+            string tag = $"[ProcessTransfer.cs][ProcessTransfer][{transfer.Id}]";
             try
             {
-                var transfer = new Transfer
-                {
-                    From = createTransferDto.FromAccountNumber,
-                    To = createTransferDto.ToAccountNumber,
-                    Amount = createTransferDto.Amount,
+                _logger.LogInformation($"About to process Transfer with Id: {transfer.Id} ");
+
+                DebitResultDto debitResponse = await Debit(transfer);
+
+                UpdateTransferDto _transfer = new (){
+                    TransactionId = transfer.Id,
                     Status = TransferStatus.Success
                 };
 
-                var createdTransfer = await _transferRepository.CreateTransferAsync(transfer);
+                var completedTransfer = await _transferRepository.UpdateTransferAsync(_transfer);
 
-                // send event to process transfer
-                await _kafkaProducer.ProduceAsync(
-                        "river_transactions",
-                        "transfer",
-                        JsonConvert.SerializeObject(createdTransfer)
-                    );
-                _logger.LogInformation($"sent event to process transfer: {createdTransfer.Id} ");
-
-                return new ApiResponse<Transfer>(
-                    code: "200",
-                    message: "Transfer is sent for processing",
-                    data: createdTransfer
-                );
+                string jsonTransfer = JsonConvert.SerializeObject(completedTransfer);
+                _logger.LogInformation($"Transfer is completed: {jsonTransfer}");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{tag} Error creating transfer: {ex.Message}", ex);
-                return new ApiResponse<Transfer>(
-                    code: "500",
-                    message: ex.Message ?? "An error occurred while creating the transfer",
-                    data: null);
-            }
-        }
-
-        public async Task<ApiResponse<List<Transfer>>> GetAllTransfersAsync(int pageNumber, int pageSize)
-        {
-            try
-            {
-                var transfers = await _transferRepository.GetAllTransfersAsync(pageNumber, pageSize);
-
-                return new ApiResponse<List<Transfer>>(
-                    code: "200",
-                    message: "Transfers fetched successfully",
-                    data: transfers);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error fetching transfers: {ex.Message}", ex);
-                return new ApiResponse<List<Transfer>>(
-                    code: "500",
-                    message: "An error occurred while fetching transfers",
-                    data: null);
+                _logger.LogError($"{tag} Transfer failed ... Error: {ex.Message}");
+                _logger.LogError($"{tag} Updating to failed ... Error: {ex.Message}");
+                UpdateTransferDto _transfer = new (){
+                    TransactionId = transfer.Id,
+                    Status = TransferStatus.Failed
+                };
+                await _transferRepository.UpdateTransferAsync(_transfer);
             }
         }
 
 
-        public async Task<ApiResponse<ReverseTransferResultDto>> ReverseTransferAsync(ReverseTransferDto reverseTransferDto)
+
+        public async Task ReverseTransferAsync(Transfer transfer)
         {
-            string tag = "[TransferService.cs][ReverseTransferAsync]";
+            string tag = $"[TransferService.cs][ReverseTransferAsync][{transfer.Id}]";
             try
             {
-                var foundTransaction = await _transferRepository.FindTransferByIdAsync(reverseTransferDto.TransactionId);
-
-                if (foundTransaction == null)
-                {
-                    return new ApiResponse<ReverseTransferResultDto>(
-                        code: "404",
-                        message: "Transfer not found",
-                        data: null
-                    );
-                }
-
-                if (foundTransaction.IsReversed)
-                {
-                    return new ApiResponse<ReverseTransferResultDto>(
-                        code: "400",
-                        message: "Transfer has already been reversed",
-                        data: null
-                    );
-                }
+                var foundTransaction = await _transferRepository.FindTransferByIdAsync(transfer.Id) ?? throw new Exception($"{tag} Transfer record not found");
+                
+                if (foundTransaction.IsReversed) throw new Exception($"{tag} Transfer has already been reversed");
 
                 var result = await Reverse(foundTransaction);
                 
-                return new ApiResponse<ReverseTransferResultDto> (
-                    code: "200",
-                    message: "Transfer reversed successfully",
-                    data: result
-                );
+                _logger.LogInformation($"{tag} Transfer reversal completed successfully");
                 
             }
             catch (Exception ex)
             {
-                _logger.LogError($"{tag} Error creating transfer: {ex.Message}", ex);
-                return new ApiResponse<ReverseTransferResultDto>(
-                    code: "500",
-                    message: ex.Message ?? "An error occurred while creating the transfer",
-                    data: null);
+                _logger.LogError($"{tag} Error reversing transfer. Error: {ex.Message}");
             }
         }
 

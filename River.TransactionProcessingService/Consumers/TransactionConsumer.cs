@@ -7,15 +7,16 @@ namespace River.TransactionProcessingService.Consumers
     {
         // private readonly ILogger<TransactionConsumer> _logger;
         private readonly IConsumer<string, string> _consumer;
-        private Boolean disposed = false;
         private readonly string _topic = Environment.GetEnvironmentVariable("KAFKA_TOPIC") ?? throw new Exception("KAFKA_TOPIC not set.");
         private readonly IActorRef _messageProcessorActor;
+        private readonly IActorRef _transferProcessorActor;
         private CancellationTokenSource _cancellationTokenSource;
 
 
-        public TransactionConsumer(IActorRef messageProcessorActor)
+        public TransactionConsumer(IActorRef messageProcessorActor, IActorRef transferProcessorActor)
         {
             _messageProcessorActor = messageProcessorActor;
+            _transferProcessorActor = transferProcessorActor;
 
             var config = new ConsumerConfig
             {
@@ -69,10 +70,21 @@ namespace River.TransactionProcessingService.Consumers
                     try
                     {
                         var consumeResult = _consumer.Consume(cancellationToken);
-                        Console.WriteLine($"{tag} Transaction message received: {consumeResult.Message.Value}");
+                        var message = consumeResult.Message.Value;
+                        var key = consumeResult.Message.Key;
+                        Console.WriteLine($"{tag} Transaction message received. Key: {key}. Message: {message}");
 
                         // Handle the transaction event here
-                        _messageProcessorActor.Tell(consumeResult.Message.Value);
+                        switch(key){
+                            case "transfer":
+                                _transferProcessorActor.Tell(message);
+                                break;
+                            default:
+                                Console.WriteLine($"{tag} Unidentified message key received");
+                                break;
+                        }
+
+                        _messageProcessorActor.Tell(message);
                     }
                     catch (ConsumeException e)
                     {
@@ -91,16 +103,6 @@ namespace River.TransactionProcessingService.Consumers
             finally
             {
                 _consumer.Close();
-            }
-        }
-
-        public void Dispose()
-        {
-            if (!disposed)
-            {
-                Console.WriteLine("Closing Kafka consumer.");
-                _consumer.Dispose();
-                disposed = true;
             }
         }
     }
