@@ -10,13 +10,15 @@ namespace River.TransactionProcessingService.Consumers
         private readonly string _topic = Environment.GetEnvironmentVariable("KAFKA_TOPIC") ?? throw new Exception("KAFKA_TOPIC not set.");
         private readonly IActorRef _messageProcessorActor;
         private readonly IActorRef _transferProcessorActor;
+        private readonly IActorRef _reversalProcessorActor;
         private CancellationTokenSource _cancellationTokenSource;
 
 
-        public TransactionConsumer(IActorRef messageProcessorActor, IActorRef transferProcessorActor)
+        public TransactionConsumer(IActorRef messageProcessorActor, IActorRef transferProcessorActor, IActorRef reverseProcessorActor)
         {
             _messageProcessorActor = messageProcessorActor;
             _transferProcessorActor = transferProcessorActor;
+            _reversalProcessorActor = reverseProcessorActor;
 
             var config = new ConsumerConfig
             {
@@ -78,6 +80,9 @@ namespace River.TransactionProcessingService.Consumers
                         switch(key){
                             case "transfer":
                                 _transferProcessorActor.Tell(message);
+                                break;
+                            case "reversal":
+                                _reversalProcessorActor.Tell(message);
                                 break;
                             default:
                                 Console.WriteLine($"{tag} Unidentified message key received");

@@ -51,9 +51,9 @@ namespace River.TransactionProcessingService.Services
 
 
 
-        public async Task ReverseTransferAsync(Transfer transfer)
+        public async Task ProcessTransferReversal(Transfer transfer)
         {
-            string tag = $"[TransferService.cs][ReverseTransferAsync][{transfer.Id}]";
+            string tag = $"[TransferService.cs][ProcessTransferReversal][{transfer.Id}]";
             try
             {
                 var foundTransaction = await _transferRepository.FindTransferByIdAsync(transfer.Id) ?? throw new Exception($"{tag} Transfer record not found");

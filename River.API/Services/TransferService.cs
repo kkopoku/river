@@ -20,7 +20,7 @@ namespace River.API.Services
         private readonly IWalletServices _walletService = walletServices;
         private readonly IKafkaProducer _kafkaProducer = kafkaProducer;
 
-        public async Task<ApiResponse<Transfer>> CreateTransferAsync(CreateTransferDto createTransferDto)
+        public async Task<ApiResponse<string>> CreateTransferAsync(CreateTransferDto createTransferDto)
         {
             string tag = "[TransferService][CreateTransferAsync]";
             try
@@ -43,16 +43,16 @@ namespace River.API.Services
                     );
                 _logger.LogInformation($"sent event to process transfer: {createdTransfer.Id} ");
 
-                return new ApiResponse<Transfer>(
+                return new ApiResponse<string>(
                     code: "200",
                     message: "Transfer is sent for processing",
-                    data: createdTransfer
+                    data: createdTransfer.Id
                 );
             }
             catch (Exception ex)
             {
                 _logger.LogError($"{tag} Error creating transfer: {ex.Message}", ex);
-                return new ApiResponse<Transfer>(
+                return new ApiResponse<string>(
                     code: "500",
                     message: ex.Message ?? "An error occurred while creating the transfer",
                     data: null);
@@ -81,44 +81,52 @@ namespace River.API.Services
         }
 
 
-        public async Task<ApiResponse<ReverseTransferResultDto>> ReverseTransferAsync(ReverseTransferDto reverseTransferDto)
+        public async Task<ApiResponse<string>> ReverseTransferAsync(ReverseTransferDto reverseTransferDto)
         {
             string tag = "[TransferService.cs][ReverseTransferAsync]";
             try
             {
-                var foundTransaction = await _transferRepository.FindTransferByIdAsync(reverseTransferDto.TransactionId);
+                var foundTransfer = await _transferRepository.FindTransferByIdAsync(reverseTransferDto.TransactionId);
 
-                if (foundTransaction == null)
+                if (foundTransfer == null)
                 {
-                    return new ApiResponse<ReverseTransferResultDto>(
+                    return new ApiResponse<string>(
                         code: "404",
                         message: "Transfer not found",
                         data: null
                     );
                 }
 
-                if (foundTransaction.IsReversed)
+                if (foundTransfer.IsReversed)
                 {
-                    return new ApiResponse<ReverseTransferResultDto>(
+                    return new ApiResponse<string>(
                         code: "400",
                         message: "Transfer has already been reversed",
                         data: null
                     );
                 }
 
-                var result = await Reverse(foundTransaction);
+
+                // send event to kafka server
+                await _kafkaProducer.ProduceAsync(
+                        "river_transactions",
+                        "reversal",
+                        JsonConvert.SerializeObject(foundTransfer)
+                    );
+                _logger.LogInformation($"{tag} sent event to process reversal: {foundTransfer.Id} ");
+
                 
-                return new ApiResponse<ReverseTransferResultDto> (
+                return new ApiResponse<string> (
                     code: "200",
-                    message: "Transfer reversed successfully",
-                    data: result
+                    message: "Transfer reversal is processing",
+                    data: foundTransfer.Id
                 );
                 
             }
             catch (Exception ex)
             {
                 _logger.LogError($"{tag} Error creating transfer: {ex.Message}", ex);
-                return new ApiResponse<ReverseTransferResultDto>(
+                return new ApiResponse<string>(
                     code: "500",
                     message: ex.Message ?? "An error occurred while creating the transfer",
                     data: null);

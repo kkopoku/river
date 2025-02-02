@@ -33,6 +33,7 @@ var actorSystem = ActorSystem.Create("TransactionProcessingService");
 using (var scope = builder.Services.BuildServiceProvider().CreateScope())
 {
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<TransferProcessorActor>>();
+    var reversalLogger = scope.ServiceProvider.GetRequiredService<ILogger<ReversalProcessorActor>>();
     var transferService = scope.ServiceProvider.GetRequiredService<ITransferService>();
 
     // Create actors
@@ -43,7 +44,12 @@ using (var scope = builder.Services.BuildServiceProvider().CreateScope())
         "transferProcessor"
     );
 
-    var transactionConsumer = new TransactionConsumer(messageProcessorActor, transferProcessorActor);
+    var reversalProcessorActor = actorSystem.ActorOf(
+        Props.Create(() => new ReversalProcessorActor(reversalLogger, transferService)),
+        "reversalProcessor"
+    );
+
+    var transactionConsumer = new TransactionConsumer(messageProcessorActor, transferProcessorActor, reversalProcessorActor);
 
     builder.Services.AddSingleton(actorSystem);
     builder.Services.AddSingleton(messageProcessorActor);
