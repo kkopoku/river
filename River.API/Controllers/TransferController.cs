@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using River.API.DTOs;
 using River.API.DTOs.Transfer;
 using River.API.Services;
-using System.Text.Json;
+using MongoDB.Bson;
 
 
 namespace River.API.Controllers;
@@ -81,6 +81,28 @@ public class TransferController(
             return StatusCode(500, response);
         }
 
+    }
+
+
+
+    [HttpGet]
+    [Route("status/{id}")]
+    public async Task<IActionResult> CheckTransferStatus(string id)
+    {
+        string tag = "[TransferController.cs][CheckTransferStatus]";
+
+        try
+        {
+            var response = await _transferService.GetTransferAsync(id);
+            var code = int.Parse(response.Code);
+            return StatusCode(code, response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogInformation(tag + e.Message);
+            var response = new ApiResponse<string>("500", e.Message);
+            return StatusCode(500, response);
+        }
     }
 
 }

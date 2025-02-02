@@ -3,6 +3,7 @@ using River.API.DTOs.Transfer;
 using River.API.Models;
 using River.API.Repositories;
 using Newtonsoft.Json;
+using MongoDB.Bson;
 
 namespace River.API.Services
 {
@@ -81,6 +82,46 @@ namespace River.API.Services
         }
 
 
+        public async Task<ApiResponse<Transfer>> GetTransferAsync(string id)
+        {
+            string tag = "[TransferService.cs][GetTransferAsync]";
+
+            if (!ObjectId.TryParse(id, out _))
+            {
+                _logger.LogWarning($"{tag} Invalid ObjectId: {id}");
+                return new ApiResponse<Transfer>("400", "Invalid transfer ID format");
+            }
+
+            try
+            {
+                var transfer = await _transferRepository.FindTransferByIdAsync(id);
+
+                if (transfer == null)
+                {
+                    return new ApiResponse<Transfer>(
+                        code: "404",
+                        message: "Transfer not found",
+                        data: null
+                    );
+                }
+
+                return new ApiResponse<Transfer>(
+                    code: "200",
+                    message: "Transfer fetched successfully",
+                    data: transfer
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"{tag} Error fetching transfer: {ex.Message}", ex);
+                return new ApiResponse<Transfer>(
+                    code: "500",
+                    message: "An error occurred while fetching the transfer",
+                    data: null);
+            }
+        }
+
+
         public async Task<ApiResponse<string>> ReverseTransferAsync(ReverseTransferDto reverseTransferDto)
         {
             string tag = "[TransferService.cs][ReverseTransferAsync]";
@@ -115,13 +156,13 @@ namespace River.API.Services
                     );
                 _logger.LogInformation($"{tag} sent event to process reversal: {foundTransfer.Id} ");
 
-                
-                return new ApiResponse<string> (
+
+                return new ApiResponse<string>(
                     code: "200",
                     message: "Transfer reversal is processing",
                     data: foundTransfer.Id
                 );
-                
+
             }
             catch (Exception ex)
             {
@@ -213,7 +254,8 @@ namespace River.API.Services
                 Balance = toBalanceAfter
             };
 
-            UpdateTransferDto reversedTransfer = new() {
+            UpdateTransferDto reversedTransfer = new()
+            {
                 TransactionId = transfer.Id,
                 IsReversed = true
             };
@@ -221,9 +263,10 @@ namespace River.API.Services
             var fromAfter = await _walletRepository.UpdateWalletAsync(fromUpdateWalletDto);
             var toAfter = await _walletRepository.UpdateWalletAsync(toUpdateWalletDto);
             var transferAfter = await _transferRepository.UpdateTransferAsync(reversedTransfer);
-            
 
-            ReverseTransferResultDto result = new() {
+
+            ReverseTransferResultDto result = new()
+            {
                 From = fromAfter,
                 To = toAfter,
                 Transfer = transferAfter
