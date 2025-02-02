@@ -83,32 +83,4 @@ public class TransferController(
 
     }
 
-
-
-    [HttpPost]
-    [Route("Kafka")]
-    public async Task<IActionResult> CreateTransferFromKafkaAsync([FromBody] object body)
-    {
-        string tag = "[TransferController][CreateTransferFromKafkaAsync]";
-        _logger.LogInformation(tag + $"Here is the body {body}");
-        try
-        {
-            var jsonBody = JsonSerializer.Deserialize<JsonElement>(body.ToString() ?? "");
-            _logger.LogInformation($"{tag} JsonBody: {jsonBody.GetProperty("name").GetString()}");
-            await _kafkaProducer.ProduceAsync(
-                        "river_transactions",
-                        "10",
-                        jsonBody.GetProperty("name").GetString() ?? ""
-                    );
-            var response = new ApiResponse<object>("200", "success", body);
-            return StatusCode(200, response);
-        }
-        catch (Exception e)
-        {
-            _logger.LogInformation(tag + e.Message);
-            var response = new ApiResponse<string>("500", e.Message);
-            return StatusCode(500, response);
-        }
-    }
-
 }
