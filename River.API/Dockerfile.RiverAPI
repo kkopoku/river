@@ -1,0 +1,21 @@
+# Step 1: Build the River.API project
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+WORKDIR /app
+EXPOSE 8080
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+COPY ["River.API.csproj", "./"]
+RUN dotnet restore "/src/River.API.csproj"
+COPY . .
+WORKDIR "/src/River.API"
+RUN dotnet build "/src/River.API.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "/src/River.API.csproj" -c Release -o /app/publish
+
+# Step 2: Create the runtime image
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "River.API.dll"]

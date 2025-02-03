@@ -1,0 +1,26 @@
+services:
+  riverapi:
+    build:
+      context: ./River.API
+      dockerfile: Dockerfile.RiverAPI
+    ports:
+      - "5141:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    env_file:
+      - River.API/.env
+    networks:
+      - rivernetwork
+
+  riverworker:
+    build:
+      context: ./River.TransactionProcessingService
+      dockerfile: Dockerfile.RiverWorker
+    networks:
+      - rivernetwork
+    env_file:
+      - River.TransactionProcessingService/.env
+
+networks:
+  rivernetwork:
+    driver: bridge
