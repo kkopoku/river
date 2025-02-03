@@ -25,11 +25,13 @@ river/
 │   │-- Services/                    # Business logic layer
 │   │-- Configurations/              # Configuration settings
 │   └-- Program.cs                   # Entry point of the API
+│   └-- Dockerfile.RiverAPI          # Dockerfile for API
 │
 │-- River.TransactionProcessingService/  # Worker service
 │   │-- Services/                        # Background processing services
 │   │-- Models/                          # Database models used in the service
 │   └-- Program.cs                       # Entry point of the worker service
+│   └-- Dockerfile.RiverWorker           # Dockerfile for worker
 │
 │-- docker-compose.yml               # Docker Compose file for containerization
 │-- .env.example                      # Environment variable configuration example
@@ -202,3 +204,9 @@ For further debugging, check logs using:
 ```sh
 docker logs <container_id>
 ```
+
+## TODO: 
+- write tests
+- transfer simulate
+- implement fees/ commissions
+- implement corridors, organisation and users
