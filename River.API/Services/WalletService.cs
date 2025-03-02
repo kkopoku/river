@@ -70,7 +70,7 @@ public class WalletService(
     {
         var wallets = await _walletRepository.GetAllWalletsAsync(pageNumber, pageSize);
         return new ApiResponse<List<Wallet>>(
-            code: $"{200}",
+            code: "200",
             message: "Wallets fetched successfully",
             data: wallets
         );
