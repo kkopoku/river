@@ -2,8 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using River.API.DTOs;
 using River.API.DTOs.Transfer;
 using River.API.Services;
-using MongoDB.Bson;
-
+using Newtonsoft.Json;
 
 namespace River.API.Controllers;
 
@@ -101,6 +100,34 @@ public class TransferController(
         {
             _logger.LogInformation(tag + e.Message);
             var response = new ApiResponse<string>("500", e.Message);
+            return StatusCode(500, response);
+        }
+    }
+
+
+    [HttpPost]
+    [Route("simulate")]
+    public async Task<IActionResult> SimulateTransfer([FromBody] CreateTransferDto simulateTransferDto)
+    {
+        string tag = "[TransferController][SimulateTransfer]";
+
+        var requestJson = JsonConvert.SerializeObject(simulateTransferDto, Formatting.Indented);
+        _logger.LogInformation($"{tag} - Received request: {requestJson}");
+
+        try
+        {
+            var response = await _transferService.SimulateTransferAsync(simulateTransferDto);
+            var code = int.Parse(response.Code);
+
+            _logger.LogInformation($"{tag} - Transfer simulation completed successfully. Response: {JsonConvert.SerializeObject(response, Formatting.Indented)}");
+
+            return StatusCode(code, response);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, $"{tag} - Error occurred: {e.Message}");
+
+            var response = new ApiResponse<string>("500", "An internal error occurred.");
             return StatusCode(500, response);
         }
     }

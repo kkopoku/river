@@ -175,6 +175,71 @@ namespace River.API.Services
         }
 
 
+        public async Task<ApiResponse<SimulateResponseDto>> SimulateTransferAsync(CreateTransferDto simulateTranferDto){
+
+            string tag = "[TransferService.cs][SimulateTransfer]";
+
+            try{
+                _logger.LogInformation($"{tag} Fetching respective wallet information ...");
+                var from = await _walletRepository.FindOneWalletAsync("AccountNumber", simulateTranferDto.FromAccountNumber);
+                var to = await _walletRepository.FindOneWalletAsync("AccountNumber", simulateTranferDto.ToAccountNumber);
+
+                if (from == null || to == null)
+                {
+                    _logger.LogWarning($"{tag} One or both wallet(s) do not exist ...");
+                    return new ApiResponse<SimulateResponseDto>(
+                        code:"400",
+                        message: "One or both accounts do not exist"
+                    );
+                }
+
+                if (from.Id == to.Id)
+                {
+                    _logger.LogWarning($"{tag} Both from and to wallets are the same, bad request");
+                    return new ApiResponse<SimulateResponseDto>(
+                        code:"400",
+                        message: "Cannot transfer to the same account"
+                    );
+                }
+
+                var cap = from.Cap;
+                var fromBalanceAfter = from.Balance - simulateTranferDto.Amount;
+                var toBalanceAfter = to.Balance + simulateTranferDto.Amount;
+
+                if (fromBalanceAfter < cap){
+                    _logger.LogWarning($"{tag} Insufficient funds");
+                    return new ApiResponse<SimulateResponseDto>(
+                        code:"400",
+                        message: "Insufficient funds to transfer"
+                    );
+                }
+
+                SimulateResponseDto response = new()
+                {
+                    From = from.AccountNumber,
+                    To = to.AccountNumber,
+                    FromBalanceBefore = from.Balance,
+                    ToBalanceBefore = to.Balance,
+                    FromBalanceAfter = fromBalanceAfter,
+                    ToBalanceAfter = toBalanceAfter
+                };
+
+                return new ApiResponse<SimulateResponseDto>(
+                    code:"200",
+                    message:"Transfer simualte successful, you can attempt tranfer",
+                    data: response
+                );
+
+            }catch(Exception e){
+                return new ApiResponse<SimulateResponseDto>(
+                    code: "500",
+                    message: e.Message ?? "An error occurred while simulating the transfer"
+                );
+            }
+            
+        }
+
+
 
         private async Task<DebitResultDto> Debit(Transfer transfer)
         {

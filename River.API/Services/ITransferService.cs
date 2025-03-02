@@ -11,4 +11,5 @@ public interface ITransferService{
     Task<ApiResponse<string>> ReverseTransferAsync(ReverseTransferDto reverseTransferDto);
     Task<ApiResponse<List<Transfer>>> GetAllTransfersAsync(int page, int pageSize);
     Task<ApiResponse<Transfer>> GetTransferAsync(string id);
+    Task<ApiResponse<SimulateResponseDto>> SimulateTransferAsync(CreateTransferDto simulateTransferDto);
 }
