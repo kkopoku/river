@@ -73,7 +73,7 @@ Ensure you have the following installed:
    ```
 3. Run the application:
    ```sh
-   dotnet run
+   dotnet run or dotnet watch run
    ```
 4. The API should now be running at `http://localhost:5141` (or your configured port).
 
@@ -89,7 +89,7 @@ Ensure you have the following installed:
    ```
 3. Run the worker service:
    ```sh
-   dotnet run
+   dotnet run or dotnet watch run
    ```
 
 ---
